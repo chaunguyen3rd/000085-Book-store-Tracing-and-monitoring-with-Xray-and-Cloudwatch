@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
-    <title>Tracing with X-ray on Serverless - Monitoring Serverless app with CloudWatch and X-Ray</title>
-    <link>/3-x-ray-trace/</link>
-    <description>Recent content in Tracing with X-ray on Serverless - Monitoring Serverless app with CloudWatch and X-Ray</description>
-    <generator>Hugo -- gohugo.io</generator><atom:link href="/3-x-ray-trace/index.xml" rel="self" type="application/rss+xml" />
-  </channel>
-</rss>
