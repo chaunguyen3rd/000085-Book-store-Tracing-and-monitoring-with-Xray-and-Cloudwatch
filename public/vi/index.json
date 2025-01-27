@@ -1,0 +1,71 @@
+[
+{
+	"uri": "/vi/1-preparation/",
+	"title": "Chuẩn bị",
+	"tags": [],
+	"description": "",
+	"content": "Trước khi thực hiện nội dung chính của workshop này, chúng ta chuẩn bị các dịch vụ và dữ liệu cho ứng dụng.\n Tải source code của sam project dưới đây  \r\rSAM source\r\r\rfcj-book-store-sam-ws8.zip\r\r(10262 ko)\r\r\r\rChạy câu lệnh dưới đây để triển khai sam  sam build\rsam deploy --guided Chúng ta đã chuẩn bị xong source cần thiết cho các bước tiếp theo.\n"
+},
+{
+	"uri": "/vi/2-cloudwatch-monitor/2-1-cloudwatch-log/",
+	"title": "Gỡ lỗi với CloudWatch logs",
+	"tags": [],
+	"description": "",
+	"content": " Mở Postnam để gọi api   Thêm một tab mới Chọn phương thức GET Dán URL API đã ghi ở bước trước vào và thêm books ở cuối Ấn Send   Sau khi hoàn thành dữ liệu của bảng Books được trả về  Mở bảng điều khiển của AWS Lambda  Ấn chọn functions books_list  Chọn tab Monitor   Ấn View logs CloudWatch  Bạn sẽ thấy tất cả các log được lưu lại mỗi lần function books_list được thực hiện  Ấn vào log mới nhất  Bạn sẽ thấy function chạy bình thường và không có lỗi gì. Tiếp theo chúng ta sẽ sửa code để function chạy lỗi.\nSửa code như sau  import json\rimport boto3\rfrom decimal import *\rfrom boto3.dynamodb.types import TypeDeserializer\rclient = boto3.client(\u0026#39;dynamodb\u0026#39;) serializer = TypeDeserializer()\rclient_cloudwatch = boto3.client(\u0026#39;cloudwatch\u0026#39;)\rclass DecimalEncoder(json.JSONEncoder):\rdef default(self, obj):\rif isinstance(obj, Decimal):\rreturn str(obj)\rreturn json.JSONEncoder.default(self, obj)\rdef deserialize(data):\rif isinstance(data, list):\rreturn [deserialize(v) for v in data]\rif isinstance(data, dict):\rtry:\rreturn serializer.deserialize(data)\rexcept TypeError:\rreturn {k: deserialize(v) for k, v in data.items()}\relse:\rreturn data\rdef lambda_handler(event, context):\rtry:\rdata_books = client.scan(\rTableName=\u0026#39;Book\u0026#39;,\rIndexName=\u0026#39;name-index\u0026#39;\r)\rexcept Exception as e:\rprint(e)\rformat_data_books = deserialize(data_books[\u0026#34;Items\u0026#34;])\rfor book in format_data_books:\rtry:\rdata_comment = client.query(\rTableName=\u0026#34;Books\u0026#34;, KeyConditionExpression=\u0026#34;id = :id AND rv_id \u0026gt; :rv_id\u0026#34;, ExpressionAttributeValues={\r\u0026#34;:id\u0026#34;: {\u0026#34;S\u0026#34;: book[\u0026#39;id\u0026#39;]}, \u0026#34;:rv_id\u0026#34;: {\u0026#34;N\u0026#34;: \u0026#34;0\u0026#34;}\r}\r)\rformat_data_comment = deserialize(data_comment[\u0026#39;Items\u0026#39;])\rbook[\u0026#34;comments\u0026#34;] = format_data_comment\rexcept Exception as e:\rprint(e)\rreturn {\r\u0026#34;statusCode\u0026#34;: 200,\r\u0026#34;headers\u0026#34;: {\r\u0026#34;Content-Type\u0026#34;: \u0026#34;application/json\u0026#34;,\r\u0026#34;Access-Control-Allow-Origin\u0026#34;: \u0026#34;*\u0026#34;,\r\u0026#34;Access-Control-Allow-Methods\u0026#34;: \u0026#34;GET,PUT,POST,DELETE, OPTIONS\u0026#34;,\r\u0026#34;Access-Control-Allow-Headers\u0026#34;: \u0026#34;Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method,X-Access-Token,XKey,Authorization\u0026#34;\r},\r\u0026#34;body\u0026#34;: json.dumps(format_data_books, cls=DecimalEncoder)\r}  Đoạn bị thay đổi là:   try:\rdata_books = client.scan(\rTableName=\u0026#39;Book\u0026#39;,\rIndexName=\u0026#39;name-index\u0026#39;\r)\rexcept Exception as e:\rprint(e) Tên bảng đã được thay đổi từ sang thành Book và thêm try-except để bắt lỗi\nGọi lại API như bước số 1, lỗi trả về là Internal server error Để xem lỗi cụ thể chúng ta quay lại bảng điều khiển của CloudWatch logs. Đợi một lát để log ghi xong. Sau đó ấn vào log mới nhất Mở rộng lỗi để xem chi tiết  Nếu bạn muốn lỗi trả về giống với lỗi được ghi trong log thì bạn thêm đoạn code sau vào except block khi scan bảng Book   return {\r\u0026#34;statusCode\u0026#34;: 400,\r\u0026#34;headers\u0026#34;: {\r\u0026#34;Content-Type\u0026#34;: \u0026#34;application/json\u0026#34;,\r\u0026#34;Access-Control-Allow-Origin\u0026#34;: \u0026#34;*\u0026#34;,\r\u0026#34;Access-Control-Allow-Methods\u0026#34;: \u0026#34;GET,PUT,POST,DELETE, OPTIONS\u0026#34;,\r\u0026#34;Access-Control-Allow-Headers\u0026#34;: \u0026#34;Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method,X-Access-Token,XKey,Authorization\u0026#34;\r},\r\u0026#34;body\u0026#34;: str(e)\r} Gọi lại API như bước số 1, khi đó lỗi trả về sẽ giống với lỗi được ghi trong log  "
+},
+{
+	"uri": "/vi/",
+	"title": "Serverless - Giám sát Lambda với CloudWatch và X-Ray",
+	"tags": [],
+	"description": "",
+	"content": "Serverless - Giám sát Lambda với CloudWatch và X-Ray Tổng quan Việc theo dõi và quan sát ứng dụng là một bước quan trọng trong triển khai ứng dụng để đảm bảo rằng tất cả các dịch vụ của ứng dụng hoạt động tốt và có khả năng xử lý trong trường hợp xảy ra lỗi. AWS cung cấp một là công cụ giúp chúng ta thực hiện việc đó như AWS CloudWatch, AWS X-Ray, AWS CloudTrail. Bài này chúng ta sẽ tìm hiểu cách gỡ lỗi AWS Lambda thông qua AWS CloudWatch, monitoring Lambda dùng metrics có sẵn của CloudWatch hoặc custom metrics mà ta tự định nghĩa, và cách để tracing API dùng AWS X-Ray.\nAmazon CloudWatch Amazon CloudWatch giám sát tài nguyên AWS mà bạn sử dụng và các ứng dụng bạn chạy trong thời gian thực. Sử dụng CloudWatch để thu thập và theo dõi các chỉ số, là những biến số mà bạn có thể đo lường cho tài nguyên và ứng dụng của mình. Tất các dịch vụ cloud đang được sử dụng sẽ cung cấp metrics cho CloudWatch và tự động hiện thị khi truy cập vào bảng điều khiển của CloudWatch. CloudWatch cũng cấp các dịch vụ sau:\n Metrics: tập hợp các chỉ số được tích hợp vào các dịch vụ AWS mà đang được sử dụngc Logs: tập hợp và lưu trữ các tệp log Events: gửi thông thông báo để phản hồi lại sự kiện Alarms: đặt các ngưỡng kích hoạt (cảnh báo) để kích hoạt một hành động  AWS X-ray X-ray giúp các nhà phát triển phân tích và gỡ lỗi production, ứng dụng phân tán, chẳng hạn như ứng dụng được xây dựng bằng kiến trúc microservices. Với X-ray, bạn có thể hiểu ứng dụng của mình và các dịch vụ cơ bản của nó hoạt động như thế nào để xác định và khắc phục nguyên nhân gốc rễ của vấn đề và lỗi về hiệu xuất. X-ray cung cấp chế độ xem từ đấu đến cuối của các yêu cầu khi chúng di chuyển qua ứng dụng của bạn và hiện thị bản đồ các thành phần cơ bản của ứng dụng. Bạn có thể sử dụng X-ray để phân tích cả các ứng dụng development và production, từ các dụng dụng 3 cấp đơn giản đến ứng dụng microservices phức tạp gồm hàng nghìn dịch vụ.\nNội dung  Chuẩn bị Giám sát với CloudWatch Giám sát với X-ray Dọn dẹp tài nguyên  "
+},
+{
+	"uri": "/vi/2-cloudwatch-monitor/",
+	"title": "Giám sát với CloudWatch",
+	"tags": [],
+	"description": "",
+	"content": "Trong bước này, chúng ta sẽ tìm hiểu cách sử dụng CloudWatch logs để gỡ lỗi cho Lambda function, tạo một cảnh báo trong CloudWatch Alarms theo metric mà chúng ta mong muốn.\nNội dung  Gỡ lỗi với CloudWatch logs Tạo custome metric Tạo CloudWatch alarm  "
+},
+{
+	"uri": "/vi/2-cloudwatch-monitor/2-2-cloudwatch-metric/",
+	"title": "Tạo custom metric",
+	"tags": [],
+	"description": "",
+	"content": "CloudWatch metric cung cấp sẵn một vài metric cho Lambda function như: số lần function được thực thi, thời gian thực thi của mỗi lần, error rates, và throttle count. Để xem các metric của một function nào đó chúng ta thực hiện như sauL\n Mở bảng điều khiển của Lambda function Ấn vào function book-list Ấn tab Monitor, chọn Metrics   Các metric được hiện thị  Tiếp theo chúng ta sẽ tạo một metric mới tổng hợp số lần truy cập vào DynamoDB bị lỗi Ấn tab Code, thêm dòng code sau ở đầu function  client_cloudwatch = boto3.client(\u0026#39;cloudwatch\u0026#39;)  Thêm đoạn code sau vào except block của scan bảng DynamoDB trước khi trả về kết quả   client_cloudwatch.put_metric_data(\rNamespace=\u0026#39;BooksList_Lambda\u0026#39;,\rMetricData=[\r{\r\u0026#39;MetricName\u0026#39;: \u0026#39;FailedConnectToDynamoDB\u0026#39;,\r\u0026#39;Dimensions\u0026#39;: [\r{\r\u0026#39;Name\u0026#39;: \u0026#39;env\u0026#39;,\r\u0026#39;Value\u0026#39;: \u0026#39;staging\u0026#39;\r},\r],\r\u0026#39;Value\u0026#39;: 1.0,\r\u0026#39;Unit\u0026#39;: \u0026#39;Seconds\u0026#39;\r},\r]\r)  Đoạn code giúp bạn tạo một metric mới và đẩy dữ liệu vào đó mỗi lần kết nối với DynamoDB bị lỗi  Cấp quyền cho function được phép truy cập vào đẩy dữ liệu vào metric   Ấn Configure tab, sau đó chọn Permissions ở menu phía bên trái. Ấn vào role của lambda function   Mở rộng BooklistRole.. policy, sau đó ấn Edit   Ấn JSON tab, thêm các dòng dưới đây vào trình chỉnh sửa:  {\r\u0026#34;Sid\u0026#34;: \u0026#34;VisualEditor0\u0026#34;,\r\u0026#34;Effect\u0026#34;: \u0026#34;Allow\u0026#34;,\r\u0026#34;Action\u0026#34;: \u0026#34;cloudwatch:PutMetricData\u0026#34;,\r\u0026#34;Resourse\u0026#34;: \u0026#34;*\u0026#34;\r},  Ấn Review policy, sau đó ấn Save change  Gọi GET API lần nữa Mở bảng điều khiển của CloudWatch Ấn vào Mectrics ở menu phía bên trái, sau đó ấn All metrics Trong mục Custom namespaces xuất hiện metric mà bạn tạo - BooksList_Lambda. Ấn vào nó  Ấn env  Chọn staging, biểu đồ hiện thị dữ liệu  Bạn có thể tuy chọn các thông số hiện thị theo thời gian 1 ngày hay 1 tuần, kiểu hiện thị dòng hay số ở phía bên trên đồ thị Vậy là chúng ta đã tạo xong một custom metric. Bước tiếp theo chúng ta sẽ sử dụng nó để tạo một CloudWatch Alarm  "
+},
+{
+	"uri": "/vi/3-x-ray-trace/",
+	"title": "Giám sát với X-ray",
+	"tags": [],
+	"description": "",
+	"content": "Trong phần này chúng ta sẽ kích hoạt X-ray cho Lambda function để track incoming và outgoing requests tới function, biết được từng đoạn của function tốn bao nhiêu thời gian. Khi đó chúng ta sẽ biết được function bị chậm ở chỗ nào và từ đó dễ dàng tối ưu hoá nó.\n Mở bảng điều khiển của AWS Lambda Ấn vào function book_delete Ấn tab Configuration   Ấn Monitoring and operations tools ở menu phía bên trái Ấn Edit   Ấn Active tracing ở mục AWS X-Ray Ấn Save  Gọi DELETE API bằng Postman Mở bảng điều khiển của CloudWatch   Mở rộng X-Ray traces Ấn Traces Kéo xuống cuối ấn vào trace đang hiện thị   Initialization subsegment: đại diện cho giai đoạn init của vòng đời môi trường thực thi của Lambda. Trong giai đoạn này, Lambda tạo hoặc mở môi trường thực thi với các tài nguyên đã được cấu hình, tải xuống mã hàm và tất cả cá lớp, chạy runtime và khởi tạo hàm. Invocation subsegment: đại diện cho giai đoạn Lambda gọi trình xử lý hàm. Điều này bắt đầu với thời gian chạy và đăng ký tiện ích mở rộng và nó kết thúc khi thời gian chạy đã sẵn sàng để gửi phản hồi. Overhead subsegment: đại diện cho giai đoạn xảy ra giữa thời gian mà runtime gửi phản hồi và tín hiệu cho lần gọi tiếp theo. Trong thời gian này, runtime kết thúc tất cả các tác vụ liên quan đến một lệnh gọi và chuẩn bị đóng băng hộp cát.  Để patch tất cả các thư viện được sử dụng trong function chúng ta thêm đoạn code sau vào đầu trong máy của bạn  from aws_xray_sdk.core import xray_recorder\rfrom aws_xray_sdk.core import patch_all\rpatch_all() Chạy các câu lệnh sau tại thư mục book_delete  pip install --target ./package aws_xray_sdk\rcd package\rzip -r ../deployment-package.zip .\rcd ..\rzip -g deployment-package.zip book_delete.py Quay lại với bảng điều khiển của function book_delete   Ấn tab Code Ấn Upload from, chọn .zip file Ấn Upload, sau đó chọn tệp deployment-package.zip mà bạn vừa tạo Ấn Save  Gọi DELETE API bằng Postman  Điều hướng đến bảng điều khiển của CloudWatch Ấn vào trace mới nhất  Bạn sẽ thấy các thông tin cụ thể hơn so với trace trước  "
+},
+{
+	"uri": "/vi/2-cloudwatch-monitor/2-3-cloudwatch-alarm/",
+	"title": "Tạo cảnh báo với CloudWatch Alarm",
+	"tags": [],
+	"description": "",
+	"content": " Mở bảng điều khiển của CloudWatch Mở rộng Alarms phía bên trái, ấn In alarm Ấn Create alarm  Ấn Select metric  Chọn metric vừa tạo ở bước trước - BooksList_Lambda, sau đó ấn env, tiếp theo chọn staging   Ấn Select metric  Chọn Sum cho mục Statistic  Thiếp lập điều kiện tại mục condition   Chọn Static cho Threshold type Chọn Greater/Equal làm điều kiện cho cảnh báo Nhập 2 là giá trị của ngưỡng cảnh báo  Ấn Next  Chọn Create new topic Nhập tên topic Nhập email mà bạn muốn nhận thông báo Ấn Create topic  Kéo xuống dưới, ấn Next Nhập tên cho cảnh báo   Ấn Next  Kéo xuống cuối và ấn Create alarm  Mở mail mà bạn đăng ký topic để xác nhận email. Ấn Confirm subcription.  Trở lại với màn hình của Postman, bạn hãy ấn Send hai lần để gọi API hai lần Mở email và kiểm tra  Trở lại với bảng điều khiển của CloudWatch Ấn All alarms, sau đó chọn cảnh báo mà bạn vừa tạo Biểu đồ của metric được hiện thị  "
+},
+{
+	"uri": "/vi/4-cleanup/",
+	"title": "Dọn dẹp tài nguyên",
+	"tags": [],
+	"description": "",
+	"content": " Làm rỗng S3 bucket   Mở bảng điều khiển của AWS S3 Chọn fcjdmsstore Ấn Empty Nhập permanently delete Ấn Empty Làm tương tự với bucket bắt đầu bằng aws-sam-cli-managed-default- và bucket fcjdmswebstore  Xoá stack của CloudFormation  sam delete --stack-name fcjdmssam\rsam delete --stack-name aws-sam-cli-managed-dev-pipeline-resources "
+},
+{
+	"uri": "/vi/categories/",
+	"title": "Categories",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "/vi/tags/",
+	"title": "Tags",
+	"tags": [],
+	"description": "",
+	"content": ""
+}]

@@ -1,0 +1,71 @@
+[
+{
+	"uri": "/2-cloudwatch-monitor/2-1-cloudwatch-log/",
+	"title": "Debugging with CloudWatch logs",
+	"tags": [],
+	"description": "",
+	"content": " Open Postnam to call api   Add a new tab Select method GET Paste the API URL recorded in the previous step and add books at the end Press Send   After completing the data of the Books table is returned  Open console of AWS Lambda  Click functions books_list  Select the Monitor tab   Click View logs CloudWatch  You will see all the logs saved each time the function books_list is executed  Click on the latest log  You should see the function running normally and without any errors. Next, we will fix the code to make the function run error.\nModify the code as follows:  import json\rimport boto3\rfrom decimal import *\rfrom boto3.dynamodb.types import TypeDeserializer\rclient = boto3.client(\u0026#39;dynamodb\u0026#39;) serializer = TypeDeserializer()\rclient_cloudwatch = boto3.client(\u0026#39;cloudwatch\u0026#39;)\rclass DecimalEncoder(json.JSONEncoder):\rdef default(self, obj):\rif isinstance(obj, Decimal):\rreturn str(obj)\rreturn json.JSONEncoder.default(self, obj)\rdef deserialize(data):\rif isinstance(data, list):\rreturn [deserialize(v) for v in data]\rif isinstance(data, dict):\rtry:\rreturn serializer.deserialize(data)\rexcept TypeError:\rreturn {k: deserialize(v) for k, v in data.items()}\relse:\rreturn data\rdef lambda_handler(event, context):\rtry:\rdata_books = client.scan(\rTableName=\u0026#39;Book\u0026#39;,\rIndexName=\u0026#39;name-index\u0026#39;\r)\rexcept Exception as e:\rprint(e)\rformat_data_books = deserialize(data_books[\u0026#34;Items\u0026#34;])\rfor book in format_data_books:\rtry:\rdata_comment = client.query(\rTableName=\u0026#34;Books\u0026#34;, KeyConditionExpression=\u0026#34;id = :id AND rv_id \u0026gt; :rv_id\u0026#34;, ExpressionAttributeValues={\r\u0026#34;:id\u0026#34;: {\u0026#34;S\u0026#34;: book[\u0026#39;id\u0026#39;]}, \u0026#34;:rv_id\u0026#34;: {\u0026#34;N\u0026#34;: \u0026#34;0\u0026#34;}\r}\r)\rformat_data_comment = deserialize(data_comment[\u0026#39;Items\u0026#39;])\rbook[\u0026#34;comments\u0026#34;] = format_data_comment\rexcept Exception as e:\rprint(e)\rreturn {\r\u0026#34;statusCode\u0026#34;: 200,\r\u0026#34;headers\u0026#34;: {\r\u0026#34;Content-Type\u0026#34;: \u0026#34;application/json\u0026#34;,\r\u0026#34;Access-Control-Allow-Origin\u0026#34;: \u0026#34;*\u0026#34;,\r\u0026#34;Access-Control-Allow-Methods\u0026#34;: \u0026#34;GET,PUT,POST,DELETE, OPTIONS\u0026#34;,\r\u0026#34;Access-Control-Allow-Headers\u0026#34;: \u0026#34;Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method,X-Access-Token,XKey,Authorization\u0026#34;\r},\r\u0026#34;body\u0026#34;: json.dumps(format_data_books, cls=DecimalEncoder)\r}  The changed sources is:   try:\rdata_books = client.scan(\rTableName=\u0026#39;Book\u0026#39;,\rIndexName=\u0026#39;name-index\u0026#39;\r)\rexcept Exception as e:\rprint(e) The table name has been changed from Book and added try-except to catch errors\nRecall the API as in step 1, the error returned is Internal server error To see the specific error we go back to the CloudWatch logs dashboard. Wait a moment for the log to finish recording. Then click on the latest log  Expand the error to see details If you want the error returned to be the same as the error recorded in the log, add the following code to the except block when scanning the Book table   return {\r\u0026#34;statusCode\u0026#34;: 400,\r\u0026#34;headers\u0026#34;: {\r\u0026#34;Content-Type\u0026#34;: \u0026#34;application/json\u0026#34;,\r\u0026#34;Access-Control-Allow-Origin\u0026#34;: \u0026#34;*\u0026#34;,\r\u0026#34;Access-Control-Allow-Methods\u0026#34;: \u0026#34;GET,PUT,POST,DELETE, OPTIONS\u0026#34;,\r\u0026#34;Access-Control-Allow-Headers\u0026#34;: \u0026#34;Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method,X-Access-Token,XKey,Authorization\u0026#34;\r},\r\u0026#34;body\u0026#34;: str(e)\r} Recall the API as in step 1, then the error returned will be the same as the error recorded in the log  "
+},
+{
+	"uri": "/1-preparation/",
+	"title": "Preparing",
+	"tags": [],
+	"description": "",
+	"content": "Before doing the main content of this workshop, we prepare the services and data for the application.\n Download the source code of the sam project below  \r\rSAM source\r\r\rfcj-book-store-sam-ws8.zip\r\r(10262 ko)\r\r\r\rRun the command below to deploy sam  sam build\rsam deploy --guided "
+},
+{
+	"uri": "/",
+	"title": "Serverless - Monitoring Serverless app with CloudWatch and X-Ray",
+	"tags": [],
+	"description": "",
+	"content": "Serverless - Monitoring Serverless app with CloudWatch and X-Ray Overview Application monitoring and observation is an important step in application deployment to ensure that all of the application\u0026rsquo;s services are working properly and are capable of handling in the event of a failure. AWS provides a tool to help us do that like AWS CloudWatch, AWS X-Ray, and AWS CloudTrail. In this article, we will learn how to debug AWS Lambda through AWS CloudWatch, monitor Lambda using CloudWatch\u0026rsquo;s built-in metrics or custom metrics that we define, and how trace the API using AWS X-Ray.\nAmazon CloudWatch Amazon CloudWatch monitors the AWS resources you use and the applications you run in real-time. Use CloudWatch to collect and track metrics, which are variables you can measure for your resources and applications. All the cloud services being used will provide metrics to CloudWatch and automatically display them when accessing the CloudWatch dashboard. CloudWatch also provides the following services:\n Metrics: a set of metrics integrated into the AWS services that are being used Logs: collect and store log files Events: send notifications in response to events Alarms: set trigger thresholds (alerts) to trigger an action  AWS X-ray X-ray helps developers analyze and debug production, and distributed applications, such as those built using a microservices architecture. With X-ray, you can understand how your application and its underlying services work to identify and fix the root cause of performance problems and failures. X-ray provides an end-to-end view of requests as they move through your application and shows a map of the basic components of your application. You can use X-ray to analyze both development and production applications, from simple 3-level applications to complex microservices applications consisting of thousands of services.\nContent  Preparation Monitor with CloudWatch Monitor with X-ray Resource Cleanup  "
+},
+{
+	"uri": "/2-cloudwatch-monitor/2-2-cloudwatch-metric/",
+	"title": "Create custom metric",
+	"tags": [],
+	"description": "",
+	"content": "CloudWatch metric provides several metrics for Lambda functions such as the number of times the function is executed, the execution time of each time, error rates, and throttle count. To see the metrics of a certain function we do the following:\n Open the Lambda function\u0026rsquo;s dashboard Click the function book-list Click the Monitor tab, select Metrics   Metrics are displayed  Next we will create a new metric that sums up the number of hits to DynamoDB that fail Click the Code tab, add the following line of code at the top of the function  client_cloudwatch = boto3.client(\u0026#39;cloudwatch\u0026#39;)  Add the following code to the except block of scan DynamoDB table before returning results   client_cloudwatch.put_metric_data(\rNamespace=\u0026#39;BooksList_Lambda\u0026#39;,\rMetricData=[\r{\r\u0026#39;MetricName\u0026#39;: \u0026#39;FailedConnectToDynamoDB\u0026#39;,\r\u0026#39;Dimensions\u0026#39;: [\r{\r\u0026#39;Name\u0026#39;: \u0026#39;env\u0026#39;,\r\u0026#39;Value\u0026#39;: \u0026#39;staging\u0026#39;\r},\r],\r\u0026#39;Value\u0026#39;: 1.0,\r\u0026#39;Unit\u0026#39;: \u0026#39;Seconds\u0026#39;\r},\r]\r)  The code helps you to create a new metric and push the data into it every time the connection to DynamoDB fails  Give the function permission to access and push data into metric   Click Configure tab, then select Permissions in the left menu. Click to lambda function\u0026rsquo;s role   Expand the BooklistRole.. policy, then click Edit   Click JSON tab, add below script to editor:  {\r\u0026#34;Sid\u0026#34;: \u0026#34;VisualEditor0\u0026#34;,\r\u0026#34;Effect\u0026#34;: \u0026#34;Allow\u0026#34;,\r\u0026#34;Action\u0026#34;: \u0026#34;cloudwatch:PutMetricData\u0026#34;,\r\u0026#34;Resourse\u0026#34;: \u0026#34;*\u0026#34;\r},  Click Review policy, then click Save change  Call GET API again Open the CloudWatch dashboard Click on Metrics in the left menu, then click All metrics In the Custom namespaces section appears the metric you created - BooksList_Lambda. Click it  Press env  Select staging, data display chart  You can choose to display parameters according to 1 day or 1 week time, line or number displayed at the top of the graph So we have created a custom metric. Next step we will use it to create a CloudWatch Alarm  "
+},
+{
+	"uri": "/2-cloudwatch-monitor/",
+	"title": "Monitoring with CloudWatch",
+	"tags": [],
+	"description": "",
+	"content": "In this step, we will learn how to use CloudWatch logs to debug the Lambda function and generate an alarm in CloudWatch Alarms according to the metric we want.\nContent  Debug with CloudWatch logs Create custome metric Create CloudWatch alarm  "
+},
+{
+	"uri": "/2-cloudwatch-monitor/2-3-cloudwatch-alarm/",
+	"title": "Creating Alerts with CloudWatch Alarm",
+	"tags": [],
+	"description": "",
+	"content": " Open the dashboard of CloudWatch Expand Alarms on the left side, press In alarm Press Create alarm  Press Select metric  Select the metric created in the previous step - BooksList_Lambda, then press env, then select staging   Press Select metric  Select Sum for Statistic  Set the condition in the item condition   Select Static for Threshold type Select Greater/Equal as the warning condition Enter 2 as the value of the alarm threshold  Click Next  Select Create new topic Enter the topic name Enter the email you want to receive notifications for Click Create topic  Scroll down, click Next Enter a name for the alert   Click Next  Scroll to the bottom and press Create alarm  Back to Postman\u0026rsquo;s screen, press Send twice to call the API twice Open email and check  Back to the CloudWatch dashboard Click All alarms, then select the alarm you just created The histogram of the metric is displayed  "
+},
+{
+	"uri": "/3-x-ray-trace/",
+	"title": "Tracing with X-ray",
+	"tags": [],
+	"description": "",
+	"content": "In this section we will enable X-ray for the Lambda function to track incoming and outgoing requests to the function, knowing how much time each segment of the function takes. Then we will know where the function is slow and from there easily optimize it.\n Open console of AWS Lambda Click the function book_delete Click the Configure tab   Click Monitoring and operations tools in the menu on the left Press Edit   Click Active tracing in the AWS X-Ray section Press Save  Call DELETE API with Postman Open the CloudWatch dashboard   Expanded X-Ray traces Press Traces Scroll to the bottom and click on the currently displayed trace   Initialization subsegment: represents the init phase of the Lambda execution environment lifecycle. During this phase, Lambda creates or opens an execution environment with configured resources, downloads the function code and all classes, runs the runtime, and initializes the function. Invocation subsegment: represents the stage when Lambda calls the function handler. This starts with the runtime and registers the extension and it ends when the runtime is ready to send a response. Overhead subsegment: represents the period that occurs between the time that the runtime sends the response and signal for the next call. During this time, the runtime finishes all tasks associated with an invocation and prepares to freeze the sandbox.  To patch all the libraries used in the function we add the following code at the beginning of your machine  from aws_xray_sdk.core import xray_recorder\rfrom aws_xray_sdk.core import patch_all\rpatch_all() Run the following commands in the book_delete directory  pip install --target ./package aws_xray_sdk\rcd package\rzip -r ../deployment-package.zip .\rcd ..\rzip -g deployment-package.zip book_delete.py Return to the function panel book_delete   Press tab Code Click Upload from, select .zip file Press Upload, then select the deployment-package.zip file you just created Press Save  Call DELETE API with Postman  Navigate to the CloudWatch dashboard Click on the latest trace  You will see more specific information than in the previous trace  "
+},
+{
+	"uri": "/4-cleanup/",
+	"title": "Cleanup",
+	"tags": [],
+	"description": "",
+	"content": " Empty S3 bucket   Open AWS S3 console Select fcj-book-store Click Empty Enter permanently delete Click Empty Do the same for bucket starting with aws-sam-cli-managed-default- and book-image-resize-store bucket  Delete CloudFormation stacks:  sam delete --stack-name fcjdmssam\rsam delete --stack-name aws-sam-cli-managed-dev-pipeline-resourcest "
+},
+{
+	"uri": "/categories/",
+	"title": "Categories",
+	"tags": [],
+	"description": "",
+	"content": ""
+},
+{
+	"uri": "/tags/",
+	"title": "Tags",
+	"tags": [],
+	"description": "",
+	"content": ""
+}]
