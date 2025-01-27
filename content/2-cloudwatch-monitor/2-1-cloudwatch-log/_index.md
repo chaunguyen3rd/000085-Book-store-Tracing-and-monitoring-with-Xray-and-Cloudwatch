@@ -1,146 +1,56 @@
 ---
-title : "Debugging with CloudWatch logs"
+title : "Debug with CloudWatch logs"
 date : "`r Sys.Date()`"
 weight : 1
 chapter : false
 pre : " <b> 2.1. </b> "
 ---
-1. Open **Postnam** to call api
-- Add a new tab
-- Select method **GET**
-- Paste the API URL recorded in the previous step and add `books` at the end
-- Press **Send**
 
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-1.png?featherlight=false&width=90pc)
+1. Open **Postman** to call api.
+    - Click **+** to add a new tab.
+    - Select **GET** method.
+    - Enter URL of the listing API that recorded from the previous step.
+    - Click **Send**.
+      ![CloudWatchLog](/images/temp/1/3.png?width=90pc)
+    - After completing, the data of the **Books** table is returned.
+      ![CloudWatchLog](/images/temp/1/4.png?width=90pc)
 
-- After completing the data of the **Books** table is returned
+2. Open [AWS Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions).
+    - Click **Functions** on the left menu.
+    - Choose the **books_list** function.
+      ![CloudWatchLog](/images/temp/1/5.png?width=90pc)
 
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-2.png?featherlight=false&width=90pc)
+3. At **books_list** page.
+    - Click the **Monitor** tab.
+    - Click the **View CloudWatch logs** button.
+      ![CloudWatchLog](/images/temp/1/6.png?width=90pc)
 
-2. Open console of [AWS Lambda]()
+4. At **/aws/lambda/books_list** page.
+    - You will see all the logs saved each time the function **books_list** is executed.
+      ![CloudWatchLog](/images/temp/1/7.png?width=90pc)
 
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-3.png?featherlight=false&width=90pc)
+5. Next, we will fix the code to make the function run failed. Copy the following code.
 
-3. Click functions **books_list**
+    ```python
+    books_data = table.scan(
+        TableName='Book',
+        IndexName=secondary_index
+    )
+    ```
 
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-4.png?featherlight=false&width=90pc)
+    - Back to **books_list** page.
+      - Click the **Code** tab.
+      - Change the code as the copied one above.
+      - Click the **Deploy** button.
+        ![CloudWatchLog](/images/temp/1/8.png?width=90pc)
 
-4. Select the **Monitor** tab
-- Click **View logs CloudWatch**
+6. After **books_list** is deployed successfully. Recall the API as in step 1, the error returned is **Internal server error**.
+    ![CloudWatchLog](/images/temp/1/9.png?width=90pc)
 
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-5.png?featherlight=false&width=90pc)
+7. Back to **/aws/lambda/books_list** CloudWatch Logs page.
+    - Click the **Refresh** icon.
+    - Click the latest log at the **Log streams**.
+      ![CloudWatchLog](/images/temp/1/10.png?width=90pc)
 
-5. You will see all the logs saved each time the function **books_list** is executed
-
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-6.png?featherlight=false&width=90pc)
-
-6. Click on the latest log
-
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-6.png?featherlight=false&width=90pc)
-
-You should see the function running normally and without any errors. Next, we will fix the code to make the function run error.
-
-7. Modify the code as follows:
-
-
-```
-import json
-import boto3
-from decimal import *
-from boto3.dynamodb.types import TypeDeserializer
-
-
-client = boto3.client('dynamodb') 
-serializer = TypeDeserializer()
-client_cloudwatch = boto3.client('cloudwatch')
-
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return str(obj)
-        return json.JSONEncoder.default(self, obj)
-            
-def deserialize(data):
-    if isinstance(data, list):
-        return [deserialize(v) for v in data]
-
-    if isinstance(data, dict):
-        try:
-            return serializer.deserialize(data)
-        except TypeError:
-            return {k: deserialize(v) for k, v in data.items()}
-    else:
-        return data
-
-def lambda_handler(event, context):
-    try:
-        data_books = client.scan(
-            TableName='Book',
-            IndexName='name-index'
-        )
-    except Exception as e:
-        print(e)
-    
-    format_data_books = deserialize(data_books["Items"])
-    for book in format_data_books:
-        try:
-            data_comment = client.query(
-                TableName="Books", 
-                KeyConditionExpression="id = :id AND rv_id > :rv_id", 
-                ExpressionAttributeValues={
-                    ":id": {"S": book['id']}, 
-                    ":rv_id": {"N": "0"}
-                }
-            )
-            format_data_comment = deserialize(data_comment['Items'])
-            book["comments"] = format_data_comment
-        except Exception as e:
-            print(e)
-            
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET,PUT,POST,DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method,X-Access-Token,XKey,Authorization"
-        },
-        "body": json.dumps(format_data_books, cls=DecimalEncoder)
-    }
-```
-- The changed sources is:
-```
-    try:
-        data_books = client.scan(
-            TableName='Book',
-            IndexName='name-index'
-        )
-    except Exception as e:
-        print(e)
-```
-The table name has been changed from **Book** and added try-except to catch errors
-
-8. Recall the API as in step 1, the error returned is **Internal server error**
-9. To see the specific error we go back to the CloudWatch logs dashboard. Wait a moment for the log to finish recording. Then click on the latest log
-
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-8.png?featherlight=false&width=90pc)
-
-10. Expand the error to see details
-11. If you want the error returned to be the same as the error recorded in the log, add the following code to the except block when scanning the **Book** table
-
-
-```
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET,PUT,POST,DELETE, OPTIONS",
-                "Access-Control-Allow-Headers": "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method,X-Access-Token,XKey,Authorization"
-            },
-            "body": str(e)
-        }
-```
-12. Recall the API as in step 1, then the error returned will be the same as the error recorded in the log
-
-![CreateRepository](/images/2-cloudwatch-monitor/2-1-cloudwatch-log-9.png?featherlight=false&width=90pc)
+8. At the detailed log page. You could see the error. The error is because we changed **TableName='Books'** to **TableName='Book'** (**Books** is the name of the DynamoDB table that we just created before).
+    ![CloudWatchLog](/images/temp/1/11.png?width=90pc)
