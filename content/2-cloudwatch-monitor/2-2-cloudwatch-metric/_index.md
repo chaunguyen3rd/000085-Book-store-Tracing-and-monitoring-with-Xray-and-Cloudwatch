@@ -5,81 +5,149 @@ weight : 2
 chapter : false
 pre : " <b> 2.2. </b> "
 ---
-CloudWatch metric provides several metrics for Lambda functions such as the number of times the function is executed, the execution time of each time, error rates, and throttle count. To see the metrics of a certain function we do the following:
-1. Open the Lambda function's dashboard
-2. Click the function **book-list**
-3. Click the **Monitor** tab, select **Metrics**
-- Metrics are displayed
-4. Next we will create a new metric that sums up the number of hits to DynamoDB that fail
-5. Click the **Code** tab, add the following line of code at the top of the function
-```
-client_cloudwatch = boto3.client('cloudwatch')
-```
-- Add the following code to the except block of scan DynamoDB table before returning results
+
+CloudWatch metric provides several metrics for Lambda functions such as the number of times the function is executed, the execution time of each time, error rates, and throttle count. To see the metrics of a certain function we do the following steps.
+
+1. Open [AWS Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions).
+    - Click **Functions** on the left menu.
+    - Choose the **books_list** function.
+      ![CloudWatchMetrics](/images/temp/1/5.png?width=90pc)
+
+2. At **books_list** page.
+    - Click the **Monitor** tab.
+    - You can see the **CloudWatch metrics** are displayed.
+      ![CloudWatchMetrics](/images/temp/1/12.png?width=90pc)
+
+3. Next, we will create a new custom metric that sums up the number of hits to DynamoDB that fail. At **books_list** page.
+    - Click the **Code** tab.
+    - Copy the following code.
+
+      ```python
+      import boto3
+      import os
+      import simplejson as json
+
+      TABLE = os.environ['TABLE_NAME']
+
+      # Get the service resource
+      dynamodb = boto3.resource('dynamodb')
+      table = dynamodb.Table(TABLE)
+      cloudwatch = boto3.client('cloudwatch')
+
+      header_res = {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "OPTIONS,POST,GET,DELETE",
+          "Access-Control-Allow-Headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token",
+      }
+
+      secondary_index = "name-index"
 
 
-```
-        client_cloudwatch.put_metric_data(
-            Namespace='BooksList_Lambda',
-            MetricData=[
-                {
-                    'MetricName': 'FailedConnectToDynamoDB',
-                    'Dimensions': [
-                        {
-                            'Name': 'env',
-                            'Value': 'staging'
-                        },
-                    ],
-                    'Value': 1.0,
-                    'Unit': 'Seconds'
-                },
-            ]
-        )
-```  
-- The code helps you to create a new metric and push the data into it every time the connection to DynamoDB fails
+      def lambda_handler(event, context):
+          try:
+              books_data = table.scan(
+                  TableName='Book',
+                  IndexName=secondary_index
+              )
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-1.png?featherlight=false&width=90pc)
+              books = books_data.get('Items', [])
 
-6. Give the function permission to access and push data into metric
-- Click **Configure** tab, then select **Permissions** in the left menu. Click to lambda function's role
+              for book in books:
+                  data_comment = table.query(
+                      TableName=TABLE,
+                      KeyConditionExpression="id = :id AND rv_id > :rv_id",
+                      ExpressionAttributeValues={
+                          ":id": book['id'],
+                          ":rv_id": 0
+                      }
+                  )
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-2.png?featherlight=false&width=90pc)
+                  book['comments'] = data_comment['Items']
 
-- Expand the **BooklistRole..** policy, then click **Edit**
+              return {
+                  "statusCode": 200,
+                  "headers": header_res,
+                  "body": json.dumps(books, use_decimal=True)
+              }
+          except Exception as e:
+              print(f'Error getting items: {e}')
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-3.png?featherlight=false&width=90pc)
+              cloudwatch.put_metric_data(
+                  Namespace='BooksList_Lambda',
+                  MetricData=[
+                      {
+                          'MetricName': 'FailedConnectToDynamoDB',
+                          'Dimensions': [
+                              {
+                                  'Name': 'env',
+                                  'Value': 'staging'
+                              },
+                          ],
+                          'Value': 1.0,
+                          'Unit': 'Seconds'
+                      },
+                  ]
+              )
 
-- Click **JSON** tab, add below script to editor:
+              raise Exception(f'Error getting items: {e}')
+      ```
 
-```
-{
-    "Sid": "VisualEditor0",
-    "Effect": "Allow",
-    "Action": "cloudwatch:PutMetricData",
-    "Resourse": "*"
-},
-```
+    - Click the **Deploy** button.
+      ![CloudWatchMetrics](/images/temp/1/13.png?width=90pc)
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-4.png?featherlight=false&width=90pc)
+4. At **books_list** page.
+    - Click the **Configuration** tab.
+    - Click the **Permissions** on the left menu.
+    - Click the **fcj-book-store-BooksListRole-...** at **Role name**.
+      ![CloudWatchMetrics](/images/temp/1/14.png?width=90pc)
 
-- Click **Review policy**, then click **Save change**
+5. At **fcj-book-store-BooksListRole-...** page.
+    - Click the **Permissions** tab.
+    - Click the **+** at **BooksListRolePolicy0** Policy name.
+    - Click the **Edit** button.
+      ![CloudWatchMetrics](/images/temp/1/15.png?width=90pc)
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-5.png?featherlight=false&width=90pc)
+6. At **Step 1: Modify permissions in BooksListRolePolicy0** page.
+    - Click the **JSON** tab.
+    - Copy the following code to the **Policy editor**.
 
-7. Call GET API again
-8. Open the CloudWatch dashboard
-9. Click on Metrics in the left menu, then click **All metrics**
-10. In the **Custom namespaces** section appears the metric you created - **BooksList_Lambda**. Click it
+      ```json
+      {
+          "Sid": "VisualEditor0",
+          "Effect": "Allow",
+          "Action": "cloudwatch:PutMetricData",
+          "Resource": "*"
+      },
+      ```
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-6.png?featherlight=false&width=90pc)
+      ![CloudWatchMetrics](/images/temp/1/16.png?width=90pc)
+    - Scroll down to the bottom and click the **Next** button.
+      ![CloudWatchMetrics](/images/temp/1/17.png?width=90pc)
 
-11. Press **env**
+7. At **Step 2: Review and save** page.
+    - Click the **Save changes** button.
+      ![CloudWatchMetrics](/images/temp/1/18.png?width=90pc)
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-7.png?featherlight=false&width=90pc)
+8. Open **Postman** to recall the api, the error returned is **Internal server error**.
+    ![CloudWatchMetrics](/images/temp/1/9.png?width=90pc)
 
-12. Select **staging**, data display chart
+9. Back to **books_list** Lambda function page.
+    - Click the **Monitor** tab.
+    - Click the **View CloudWatch logs** button.
+      ![CloudWatchLog](/images/temp/1/6.png?width=90pc)
 
-![ChangeCode](/images/2-cloudwatch-monitor/2-1-custom-metric-8.png?featherlight=false&width=90pc)
+10. At **CloudWatch** page.
+    - Click the **All metrics** on the left menu.
+    - Click the **BooksList_Lambda** at the **Custom namespaces**.
+      ![CloudWatchMetrics](/images/temp/1/19.png?width=90pc)
+    - Next, click the **env**.
+      ![CloudWatchMetrics](/images/temp/1/20.png?width=90pc)
+    - Click the **staging**.
+    - Click the **Add to graph**.
+      ![CloudWatchMetrics](/images/temp/1/21.png?width=90pc)
+    - After the graph is refreshed, hover the **Blue** point on the graph.
+    - Then, you can see the information.
+      ![CloudWatchMetrics](/images/temp/1/22.png?width=90pc)
 
-13. You can choose to display parameters according to 1 day or 1 week time, line or number displayed at the top of the graph
-So we have created a custom metric. Next step we will use it to create a CloudWatch Alarm
+So we created a custom metric successfully. Next step we will use it to create a CloudWatch Alarm.
