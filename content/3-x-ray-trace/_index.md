@@ -44,48 +44,53 @@ In this section we will enable X-ray for the Lambda function to track incoming a
     - Then, scroll down and select the current displaced trace with status **OK**.
       ![XrayTrace](/images/temp/1/45.png?width=90pc)
 
-7. At **Trace 1-...** page.
-    - Initialization subsegment: Represents the init phase of the Lambda execution environment lifecycle. During this phase, Lambda creates or opens an execution environment with configured resources, downloads the function code and all classes, runs the runtime, and initializes the function.
-    - Invocation subsegment: represents the stage when Lambda calls the function handler. This starts with the runtime and registers the extension and it ends when the runtime is ready to send a response.
-    - Overhead subsegment: represents the period that occurs between the time that the runtime sends the response and signal for the next call. During this time, the runtime finishes all tasks associated with an invocation and prepares to freeze the sandbox.
+7. At **Trace 1-...** page. You can see the subsegment.
+    - **Initialization** subsegment: Represents the init phase of the Lambda execution environment lifecycle. During this phase, Lambda creates or opens an execution environment with configured resources, downloads the function code and all classes, runs the runtime, and initializes the function.
+    - **Invocation** subsegment: Represents the stage when Lambda calls the function handler. This starts with the runtime and registers the extension and it ends when the runtime is ready to send a response.
+    - **Overhead** subsegment: Represents the period that occurs between the time that the runtime sends the response and signal for the next call. During this time, the runtime finishes all tasks associated with an invocation and prepares to freeze the sandbox.
 
-8. To patch all the libraries used in the function we add the following code at the beginning of your machine
-```
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch_all
+8. Go to the root directory of **fcj-book-store-sam-ws8** project. Open the **fcj-book-store-sam-ws8/fcj-book-shop/book_delete** directory.
+    - Create a file called `requirements.txt` with the below content.
 
-patch_all()
-```
+      ```txt
+      aws_xray_sdk
+      ```
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-4.png?featherlight=false&width=90pc)
+      ![XrayTrace](/images/temp/1/46.png?width=90pc)
+    - Open the **fcj-book-store-sam-ws8/fcj-book-shop/book_delete/book_delete.py** and copy the below content to that file.
 
-7. Run the following commands in the **book_delete** directory
-```
-pip install --target ./package aws_xray_sdk
-cd package
-zip -r ../deployment-package.zip .
-cd ..
-zip -g deployment-package.zip book_delete.py
-```
-8. Return to the function panel **book_delete**
-- Press tab **Code**
-- Click **Upload from**, select **.zip file**
-- Press **Upload**, then select the **deployment-package.zip** file you just created
-- Press **Save**
+        ```py
+        from aws_xray_sdk.core import patch_all
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-5.png?featherlight=false&width=90pc)
+        patch_all()
+        ```
 
-9. Call DELETE API with Postman
+        ![XrayTrace](/images/temp/1/47.png?width=90pc)
+    - Open your terminal and run the below commands at the root directory of **fcj-book-store-sam-ws8** project.
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-6.png?featherlight=false&width=90pc)
+      ```bash
+      sam build
+      sam validate
+      sam deploy --guided
+      ```
 
-10. Navigate to the CloudWatch dashboard
-11. Click on the latest trace
+      ![XrayTrace](/images/temp/1/48.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-7.png?featherlight=false&width=90pc)
+9. Back to **book_delete** page.
+    - Click the **Code** tab.
+    - Check if the **book_delete** function is updated.
+      ![XrayTrace](/images/temp/1/49.png?width=90pc)
 
-12. You will see more specific information than in the previous trace
+10. Open **Postman** to recall the **DELETE** api with the id `4`.
+    ![XrayTrace](/images/temp/1/50.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-8.png?featherlight=false&width=90pc)
+11. Back to **CloudWatch** page.
+    - Click the **Traces** on the left menu.
+    - Click the **Run query** button.
+      ![XrayTrace](/images/temp/1/44.png?width=90pc)
+    - Then, scroll down and select the current displaced trace with status **OK**.
+      ![XrayTrace](/images/temp/1/51.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-9.png?featherlight=false&width=90pc)
+12. At **Trace 1-...** page. You can see the more specific information than in the previous trace.
+    ![XrayTrace](/images/temp/1/52.png?width=90pc)
+    ![XrayTrace](/images/temp/1/53.png?width=90pc)
