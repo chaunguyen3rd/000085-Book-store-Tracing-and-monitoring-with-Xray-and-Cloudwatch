@@ -30,13 +30,13 @@ Ensure you have the AWS CLI and SAM CLI installed on your machine, configure AWS
     - Disable rollback [y/N]: n
     - Save arguments to configuration file [Y/n]: y
     - After successful creation, record the value of the **ApiUrl** outputs.
-      ![Preparation](/images/temp/1/1.png?width=90pc)
+      ![Preparation](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/1.png?width=90pc)
 
 4. To add data to the table, you can download the file below:
 {{%attachments title="Data" pattern=".*\.(json)$"/%}}
 
 5. Open this file, replace all **`<AWS-REGION>`** with the region where you created the S3 **book-image-resize-shop-by-myself** bucket, for example: **us-east-1**.
-  ![Preparation](/images/temp/1/2.png?width=90pc)
+  ![Preparation](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/2.png?width=90pc)
 
 6. Run the following command in the directory where you save the dynamoDB.json
 

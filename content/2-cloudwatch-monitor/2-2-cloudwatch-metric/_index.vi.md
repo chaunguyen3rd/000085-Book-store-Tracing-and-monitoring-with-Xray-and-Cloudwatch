@@ -11,12 +11,12 @@ CloudWatch metric cung cấp một số số liệu cho các hàm Lambda như s�
 1. Mở [AWS Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions).
     - Nhấn **Functions** trên menu bên trái.
     - Chọn hàm **books_list**.
-      ![CloudWatchMetrics](/images/temp/1/5.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/5.png?width=90pc)
 
 2. Tại trang **books_list**.
     - Nhấn tab **Monitor**.
     - Bạn có thể thấy các **CloudWatch metrics** được hiển thị.
-      ![CloudWatchMetrics](/images/temp/1/12.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/12.png?width=90pc)
 
 3. Tiếp theo, chúng ta sẽ tạo một số liệu tùy chỉnh mới để tổng hợp số lần truy cập vào DynamoDB bị lỗi. Tại trang **books_list**.
     - Nhấn tab **Code**.
@@ -94,19 +94,19 @@ CloudWatch metric cung cấp một số số liệu cho các hàm Lambda như s�
       ```
 
     - Nhấn nút **Deploy**.
-      ![CloudWatchMetrics](/images/temp/1/13.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/13.png?width=90pc)
 
 4. Tại trang **books_list**.
     - Nhấn tab **Configuration**.
     - Nhấn **Permissions** trên menu bên trái.
     - Nhấn **fcj-book-store-BooksListRole-...** tại **Role name**.
-      ![CloudWatchMetrics](/images/temp/1/14.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/14.png?width=90pc)
 
 5. Tại trang **fcj-book-store-BooksListRole-...**.
     - Nhấn tab **Permissions**.
     - Nhấn **+** tại **BooksListRolePolicy0** Policy name.
     - Nhấn nút **Edit**.
-      ![CloudWatchMetrics](/images/temp/1/15.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/15.png?width=90pc)
 
 6. Tại trang **Step 1: Modify permissions in BooksListRolePolicy0**.
     - Nhấn tab **JSON**.
@@ -121,33 +121,33 @@ CloudWatch metric cung cấp một số số liệu cho các hàm Lambda như s�
       },
       ```
 
-      ![CloudWatchMetrics](/images/temp/1/16.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/16.png?width=90pc)
     - Cuộn xuống cuối trang và nhấn nút **Next**.
-      ![CloudWatchMetrics](/images/temp/1/17.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/17.png?width=90pc)
 
 7. Tại trang **Step 2: Review and save**.
     - Nhấn nút **Save changes**.
-      ![CloudWatchMetrics](/images/temp/1/18.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/18.png?width=90pc)
 
 8. Mở **Postman** để gọi lại API, lỗi trả về là **Internal server error**.
-    ![CloudWatchMetrics](/images/temp/1/9.png?width=90pc)
+    ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/9.png?width=90pc)
 
 9. Quay lại trang hàm Lambda **books_list**.
     - Nhấn tab **Monitor**.
     - Nhấn nút **View CloudWatch logs**.
-      ![CloudWatchLog](/images/temp/1/6.png?width=90pc)
+      ![CloudWatchLog](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/6.png?width=90pc)
 
 10. Tại trang **CloudWatch**.
     - Nhấn **All metrics** trên menu bên trái.
     - Nhấn **BooksList_Lambda** tại **Custom namespaces**.
-      ![CloudWatchMetrics](/images/temp/1/19.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/19.png?width=90pc)
     - Tiếp theo, nhấn **env**.
-      ![CloudWatchMetrics](/images/temp/1/20.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/20.png?width=90pc)
     - Nhấn **staging**.
     - Nhấn **Add to graph**.
-      ![CloudWatchMetrics](/images/temp/1/21.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/21.png?width=90pc)
     - Sau khi biểu đồ được làm mới, di chuột qua điểm **Blue** trên biểu đồ.
     - Sau đó, bạn có thể thấy thông tin.
-      ![CloudWatchMetrics](/images/temp/1/22.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/22.png?width=90pc)
 
 Vậy là chúng ta đã tạo thành công một số liệu tùy chỉnh. Bước tiếp theo chúng ta sẽ sử dụng nó để tạo một CloudWatch Alarm.

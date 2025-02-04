@@ -11,12 +11,12 @@ CloudWatch metric provides several metrics for Lambda functions such as the numb
 1. Open [AWS Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions).
     - Click **Functions** on the left menu.
     - Choose the **books_list** function.
-      ![CloudWatchMetrics](/images/temp/1/5.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/5.png?width=90pc)
 
 2. At **books_list** page.
     - Click the **Monitor** tab.
     - You can see the **CloudWatch metrics** are displayed.
-      ![CloudWatchMetrics](/images/temp/1/12.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/12.png?width=90pc)
 
 3. Next, we will create a new custom metric that sums up the number of hits to DynamoDB that fail. At **books_list** page.
     - Click the **Code** tab.
@@ -94,19 +94,19 @@ CloudWatch metric provides several metrics for Lambda functions such as the numb
       ```
 
     - Click the **Deploy** button.
-      ![CloudWatchMetrics](/images/temp/1/13.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/13.png?width=90pc)
 
 4. At **books_list** page.
     - Click the **Configuration** tab.
     - Click the **Permissions** on the left menu.
     - Click the **fcj-book-store-BooksListRole-...** at **Role name**.
-      ![CloudWatchMetrics](/images/temp/1/14.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/14.png?width=90pc)
 
 5. At **fcj-book-store-BooksListRole-...** page.
     - Click the **Permissions** tab.
     - Click the **+** at **BooksListRolePolicy0** Policy name.
     - Click the **Edit** button.
-      ![CloudWatchMetrics](/images/temp/1/15.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/15.png?width=90pc)
 
 6. At **Step 1: Modify permissions in BooksListRolePolicy0** page.
     - Click the **JSON** tab.
@@ -121,33 +121,33 @@ CloudWatch metric provides several metrics for Lambda functions such as the numb
       },
       ```
 
-      ![CloudWatchMetrics](/images/temp/1/16.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/16.png?width=90pc)
     - Scroll down to the bottom and click the **Next** button.
-      ![CloudWatchMetrics](/images/temp/1/17.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/17.png?width=90pc)
 
 7. At **Step 2: Review and save** page.
     - Click the **Save changes** button.
-      ![CloudWatchMetrics](/images/temp/1/18.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/18.png?width=90pc)
 
 8. Open **Postman** to recall the api, the error returned is **Internal server error**.
-    ![CloudWatchMetrics](/images/temp/1/9.png?width=90pc)
+    ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/9.png?width=90pc)
 
 9. Back to **books_list** Lambda function page.
     - Click the **Monitor** tab.
     - Click the **View CloudWatch logs** button.
-      ![CloudWatchLog](/images/temp/1/6.png?width=90pc)
+      ![CloudWatchLog](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/6.png?width=90pc)
 
 10. At **CloudWatch** page.
     - Click the **All metrics** on the left menu.
     - Click the **BooksList_Lambda** at the **Custom namespaces**.
-      ![CloudWatchMetrics](/images/temp/1/19.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/19.png?width=90pc)
     - Next, click the **env**.
-      ![CloudWatchMetrics](/images/temp/1/20.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/20.png?width=90pc)
     - Click the **staging**.
     - Click the **Add to graph**.
-      ![CloudWatchMetrics](/images/temp/1/21.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/21.png?width=90pc)
     - After the graph is refreshed, hover the **Blue** point on the graph.
     - Then, you can see the information.
-      ![CloudWatchMetrics](/images/temp/1/22.png?width=90pc)
+      ![CloudWatchMetrics](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/22.png?width=90pc)
 
 So we created a custom metric successfully. Next step we will use it to create a CloudWatch Alarm.
