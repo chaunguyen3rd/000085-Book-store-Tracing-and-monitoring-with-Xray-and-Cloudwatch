@@ -1,75 +1,96 @@
 ---
-title : "Giám sát với X-ray"
-date :  "`r Sys.Date()`" 
+title : "Theo dõi với X-ray"
+date : "`r Sys.Date()`"
 weight : 3
 chapter : false
 pre : " <b> 3. </b> "
 ---
-Trong phần này chúng ta sẽ kích hoạt X-ray cho Lambda function để track incoming và outgoing requests tới function, biết được từng đoạn của function tốn bao nhiêu thời gian. Khi đó chúng ta sẽ biết được function bị chậm ở chỗ nào và từ đó dễ dàng tối ưu hoá nó.
 
-1. Mở bảng điều khiển của [AWS Lambda]()
-2. Ấn vào function **book_delete**
-3. Ấn tab **Configuration**
-- Ấn **Monitoring and operations tools** ở menu phía bên trái
-- Ấn **Edit**
+Trong phần này, chúng ta sẽ bật X-ray cho hàm Lambda để theo dõi các yêu cầu đến và đi từ hàm, biết được mỗi đoạn của hàm mất bao nhiêu thời gian. Sau đó, chúng ta sẽ biết được hàm chậm ở đâu và từ đó dễ dàng tối ưu hóa nó.
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-1.png?featherlight=false&width=90pc)
+1. Mở [AWS Lambda console](https://us-east-1.console.aws.amazon.com/lambda/home?region=us-east-1#/functions).
+    - Nhấp vào **Functions** trên menu bên trái.
+    - Chọn hàm **book_delete**.
+      ![XrayTrace](/images/temp/1/39.png?width=90pc)
 
-- Ấn **Active tracing** ở mục AWS X-Ray
-- Ấn **Save**
+2. Tại trang **book_delete**.
+    - Nhấp vào tab **Configuration**.
+    - Nhấp vào **Monitoring and operations tools** trên menu bên trái.
+    - Nhấp vào nút **Edit**.
+      ![XrayTrace](/images/temp/1/40.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-2.png?featherlight=false&width=90pc)
+3. Tại trang **Edit monitoring tools**.
+    - Chọn **Enable** tại **Lambda service traces**.
+    - Nhấp vào nút **Save**.
+      ![XrayTrace](/images/temp/1/41.png?width=90pc)
 
-4. Gọi DELETE API bằng Postman
-5. Mở bảng điều khiển của CloudWatch
-- Mở rộng X-Ray traces
-- Ấn **Traces**
-- Kéo xuống cuối ấn vào trace đang hiện thị
+4. Mở **Postman** để gọi API.
+    - Nhấp vào **+** để thêm một tab mới.
+    - Chọn phương thức **DELETE**.
+    - Nhập URL của API xóa với **book_id**, ví dụ là `2`.
+    - Nhấp vào **Send**.
+    - Sau khi hoàn thành, sách với id `2` sẽ bị xóa.
+      ![XrayTrace](/images/temp/1/42.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-11.png?featherlight=false&width=90pc)
+5. Quay lại trang **book_delete**.
+    - Nhấp vào tab **Monitor**.
+    - Nhấp vào nút **View X-Ray traces**.
+      ![XrayTrace](/images/temp/1/43.png?width=90pc)
 
+6. Tại trang **CloudWatch**.
+    - Nhấp vào **Traces** trên menu bên trái.
+    - Nhấp vào nút **Run query**.
+      ![XrayTrace](/images/temp/1/44.png?width=90pc)
+    - Sau đó, cuộn xuống và chọn dấu vết hiện tại với trạng thái **OK**.
+      ![XrayTrace](/images/temp/1/45.png?width=90pc)
 
-- Initialization subsegment: đại diện cho giai đoạn init của vòng đời môi trường thực thi của Lambda. Trong giai đoạn này, Lambda tạo hoặc mở môi trường thực thi với các tài nguyên đã được cấu hình, tải xuống mã hàm và tất cả cá lớp, chạy runtime và khởi tạo hàm.
-- Invocation subsegment: đại diện cho giai đoạn Lambda gọi trình xử lý hàm. Điều này bắt đầu với thời gian chạy và đăng ký tiện ích mở rộng và nó kết thúc khi thời gian chạy đã sẵn sàng để gửi phản hồi.
-- Overhead subsegment: đại diện cho giai đoạn xảy ra giữa thời gian mà runtime gửi phản hồi và tín hiệu cho lần gọi tiếp theo. Trong thời gian này, runtime kết thúc tất cả các tác vụ liên quan đến một lệnh gọi và chuẩn bị đóng băng hộp cát.
+7. Tại trang **Trace 1-...**. Bạn có thể thấy các phân đoạn con.
+    - Phân đoạn con **Initialization**: Đại diện cho giai đoạn khởi tạo của vòng đời môi trường thực thi Lambda. Trong giai đoạn này, Lambda tạo hoặc mở một môi trường thực thi với các tài nguyên đã cấu hình, tải xuống mã hàm và tất cả các lớp, chạy runtime và khởi tạo hàm.
+    - Phân đoạn con **Invocation**: Đại diện cho giai đoạn khi Lambda gọi hàm handler. Điều này bắt đầu với runtime và đăng ký phần mở rộng và kết thúc khi runtime sẵn sàng gửi phản hồi.
+    - Phân đoạn con **Overhead**: Đại diện cho khoảng thời gian xảy ra giữa thời điểm runtime gửi phản hồi và tín hiệu cho lần gọi tiếp theo. Trong thời gian này, runtime hoàn thành tất cả các tác vụ liên quan đến một lần gọi và chuẩn bị đóng băng sandbox.
 
-6. Để patch tất cả các thư viện được sử dụng trong function chúng ta thêm đoạn code sau vào đầu trong máy của bạn
-```
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.core import patch_all
+8. Đi đến thư mục gốc của dự án **fcj-book-store-sam-ws8**. Mở thư mục **fcj-book-store-sam-ws8/fcj-book-shop/book_delete**.
+    - Tạo một tệp có tên `requirements.txt` với nội dung dưới đây.
 
-patch_all()
-```
+      ```txt
+      aws_xray_sdk
+      ```
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-4.png?featherlight=false&width=90pc)
+      ![XrayTrace](/images/temp/1/46.png?width=90pc)
+    - Mở tệp **fcj-book-store-sam-ws8/fcj-book-shop/book_delete/book_delete.py** và sao chép nội dung dưới đây vào tệp đó.
 
-7. Chạy các câu lệnh sau tại thư mục **book_delete**
-```
-pip install --target ./package aws_xray_sdk
-cd package
-zip -r ../deployment-package.zip .
-cd ..
-zip -g deployment-package.zip book_delete.py
-```
-8. Quay lại với bảng điều khiển của function **book_delete**
-- Ấn tab **Code**
-- Ấn **Upload from**, chọn **.zip file**
-- Ấn **Upload**, sau đó chọn tệp **deployment-package.zip** mà bạn vừa tạo
-- Ấn **Save**
+        ```py
+        from aws_xray_sdk.core import patch_all
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-5.png?featherlight=false&width=90pc)
+        patch_all()
+        ```
 
-9. Gọi DELETE API bằng Postman
+        ![XrayTrace](/images/temp/1/47.png?width=90pc)
+    - Mở terminal của bạn và chạy các lệnh dưới đây tại thư mục gốc của dự án **fcj-book-store-sam-ws8**.
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-6.png?featherlight=false&width=90pc)
+      ```bash
+      sam build
+      sam validate
+      sam deploy --guided
+      ```
 
-10. Điều hướng đến bảng điều khiển của CloudWatch
-11. Ấn vào trace mới nhất
+      ![XrayTrace](/images/temp/1/48.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-7.png?featherlight=false&width=90pc)
+9. Quay lại trang **book_delete**.
+    - Nhấp vào tab **Code**.
+    - Kiểm tra xem hàm **book_delete** đã được cập nhật chưa.
+      ![XrayTrace](/images/temp/1/49.png?width=90pc)
 
-12. Bạn sẽ thấy các thông tin cụ thể hơn so với trace trước
+10. Mở **Postman** để gọi lại API **DELETE** với id `4`.
+    ![XrayTrace](/images/temp/1/50.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-8.png?featherlight=false&width=90pc)
+11. Quay lại trang **CloudWatch**.
+    - Nhấp vào **Traces** trên menu bên trái.
+    - Nhấp vào nút **Run query**.
+      ![XrayTrace](/images/temp/1/44.png?width=90pc)
+    - Sau đó, cuộn xuống và chọn dấu vết hiện tại với trạng thái **OK**.
+      ![XrayTrace](/images/temp/1/51.png?width=90pc)
 
-![CreateAlarm](/images/3-x-ray-trace/3-x-ray-trace-9.png?featherlight=false&width=90pc)
+12. Tại trang **Trace 1-...**. Bạn có thể thấy thông tin chi tiết hơn so với dấu vết trước đó.
+    ![XrayTrace](/images/temp/1/52.png?width=90pc)
+    ![XrayTrace](/images/temp/1/53.png?width=90pc)
