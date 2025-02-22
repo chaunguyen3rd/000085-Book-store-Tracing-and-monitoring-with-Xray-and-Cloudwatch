@@ -30,13 +30,13 @@ Trước khi thực hiện nội dung chính của hội thảo này, chúng ta 
     - Disable rollback [y/N]: n
     - Save arguments to configuration file [Y/n]: y
     - Sau khi tạo thành công, ghi lại giá trị của **ApiUrl** outputs.
-      ![Chuẩn bị](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/1.png?width=90pc)
+      ![Chuẩn bị](/images/temp/1/1.png?width=90pc)
 
 4. Để thêm dữ liệu vào bảng, bạn có thể tải tệp dưới đây:
 {{%attachments title="Dữ liệu" pattern=".*\.(json)$"/%}}
 
 5. Mở tệp này, thay thế tất cả **`<AWS-REGION>`** bằng khu vực nơi bạn đã tạo bucket S3 **book-image-resize-shop-by-myself**, ví dụ: **us-east-1**.
-  ![Chuẩn bị](https://chaunguyen3rd.github.io/000085-Book-store-Tracing-and-monitoring-with-Xray-and-Cloudwatch/images/temp/1/2.png?width=90pc)
+  ![Chuẩn bị](/images/temp/1/2.png?width=90pc)
 
 6. Chạy lệnh sau trong thư mục nơi bạn lưu dynamoDB.json
 
