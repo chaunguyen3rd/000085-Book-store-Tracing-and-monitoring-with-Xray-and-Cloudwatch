@@ -1,6 +1,6 @@
 ---
 title : "Tracing with X-ray"
-date : "`r Sys.Date()`"
+date : 2025-02-11
 weight : 3
 chapter : false
 pre : " <b> 3. </b> "
@@ -48,6 +48,7 @@ In this section we will enable X-ray for the Lambda function to track incoming a
     - **Initialization** subsegment: Represents the init phase of the Lambda execution environment lifecycle. During this phase, Lambda creates or opens an execution environment with configured resources, downloads the function code and all classes, runs the runtime, and initializes the function.
     - **Invocation** subsegment: Represents the stage when Lambda calls the function handler. This starts with the runtime and registers the extension and it ends when the runtime is ready to send a response.
     - **Overhead** subsegment: Represents the period that occurs between the time that the runtime sends the response and signal for the next call. During this time, the runtime finishes all tasks associated with an invocation and prepares to freeze the sandbox.
+      ![XrayTrace](/images/temp/1/54.png?width=90pc)
 
 8. Go to the root directory of **fcj-book-store-sam-ws8** project. Open the **fcj-book-store-sam-ws8/fcj-book-shop/book_delete** directory.
     - Create a file called `requirements.txt` with the below content.
@@ -71,7 +72,7 @@ In this section we will enable X-ray for the Lambda function to track incoming a
       ```bash
       sam build
       sam validate
-      sam deploy --guided
+      sam deploy
       ```
 
       ![XrayTrace](/images/temp/1/48.png?width=90pc)

@@ -1,6 +1,6 @@
 ---
 title : "Serverless - Monitoring Serverless app with CloudWatch and X-Ray"
-date : "`r Sys.Date()`"
+date : 2025-02-11
 weight : 1
 chapter : false
 ---

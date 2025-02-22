@@ -1,6 +1,6 @@
 ---
 title : "Theo dõi với X-ray"
-date : "`r Sys.Date()`"
+date : 2025-02-11
 weight : 3
 chapter : false
 pre : " <b> 3. </b> "
@@ -48,6 +48,7 @@ Trong phần này, chúng ta sẽ bật X-ray cho hàm Lambda để theo dõi c�
     - Phân đoạn con **Initialization**: Đại diện cho giai đoạn khởi tạo của vòng đời môi trường thực thi Lambda. Trong giai đoạn này, Lambda tạo hoặc mở một môi trường thực thi với các tài nguyên đã cấu hình, tải xuống mã hàm và tất cả các lớp, chạy runtime và khởi tạo hàm.
     - Phân đoạn con **Invocation**: Đại diện cho giai đoạn khi Lambda gọi hàm handler. Điều này bắt đầu với runtime và đăng ký phần mở rộng và kết thúc khi runtime sẵn sàng gửi phản hồi.
     - Phân đoạn con **Overhead**: Đại diện cho khoảng thời gian xảy ra giữa thời điểm runtime gửi phản hồi và tín hiệu cho lần gọi tiếp theo. Trong thời gian này, runtime hoàn thành tất cả các tác vụ liên quan đến một lần gọi và chuẩn bị đóng băng sandbox.
+      ![XrayTrace](/images/temp/1/54.png?width=90pc)
 
 8. Đi đến thư mục gốc của dự án **fcj-book-store-sam-ws8**. Mở thư mục **fcj-book-store-sam-ws8/fcj-book-shop/book_delete**.
     - Tạo một tệp có tên `requirements.txt` với nội dung dưới đây.
@@ -71,7 +72,7 @@ Trong phần này, chúng ta sẽ bật X-ray cho hàm Lambda để theo dõi c�
       ```bash
       sam build
       sam validate
-      sam deploy --guided
+      sam deploy
       ```
 
       ![XrayTrace](/images/temp/1/48.png?width=90pc)
